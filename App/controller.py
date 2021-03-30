@@ -20,6 +20,8 @@
  * along withthis program.  If not, see <http://www.gnu.org/licenses/>.
  """
 
+import time
+import tracemalloc
 import config as cf
 import model
 import csv
@@ -36,8 +38,24 @@ def initCatalog():
 
 # Funciones para la carga de datos
 def cargarinfocatalogo(catalog):
+    delta_time = -1.0
+    delta_memory = -1.0
+
+    tracemalloc.start()
+    start_time = getTime()
+    start_memory = getMemory()
+
     cargarcategorias(catalog)
     cargardatos(catalog)
+
+    stop_memory = getMemory()
+    stop_time = getTime()
+    tracemalloc.stop()
+
+    delta_time = stop_time - start_time
+    delta_memory = deltaMemory(start_memory, stop_memory)
+
+    return delta_time, delta_memory
 
 def cargardatos(catalog):
     vfile = cf.data_dir + 'videos/videos-small.csv'
@@ -56,6 +74,26 @@ def cargarcategorias(catalog):
 # Funciones de consulta sobre el catálogo
 def sizecategorias(catalog):
     return model.sizecategorias(catalog)
+
+# Funciones consulta tiempo y memoria
+def getTime():
+    return float(time.perf_counter()*1000)
+
+
+def getMemory():
+    return tracemalloc.take_snapshot()
+
+
+def deltaMemory(start_memory, stop_memory):
+    memory_diff = stop_memory.compare_to(start_memory, "filename")
+    delta_memory = 0.0
+
+    for stat in memory_diff:
+        delta_memory = delta_memory + stat.size_diff
+
+    delta_memory = delta_memory/1024.0
+    return delta_memory
+
 
 #Funcion Req Lab 6
 def videos_likes_categoria(catalog, categoria, numero):
