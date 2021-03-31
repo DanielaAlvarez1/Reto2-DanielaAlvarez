@@ -229,27 +229,24 @@ def videos_likes(catalog, pais, tag, numero):
     pais = pais.replace(" ", "").lower()
     videos_pais = mp.get(catalog['videos_por_pais'], pais)
     videos = me.getValue(videos_pais)
-    videos_tag = lt.newList(datastructure="ARRAY_LIST")
+    videos_ordenados = sortVideos(videos, comparelikes)
+    lista_videos = []
 
     for i in range(1, lt.size(videos)):
-        video = lt.getElement(videos, i)
+        video = lt.getElement(videos_ordenados, i)
         lista_tag = video["tags"]
         for e in range(len(lista_tag)):
             if tag in lista_tag[e]:
-                lt.addLast(videos_tag,video)
-
-    videos = sortVideos(videos_tag, comparelikes)
-    vids = lt.subList(videos, 1, numero + 1)
-    respuesta = []
-
-    for i in range(1, lt.size(vids)):
-        video = lt.getElement(vids, i)
-        vid_t = {"Nombre del video": video["title"], "Nombre del canal": video["channel_title"],
-                "Fecha Publicación": video["publish_time"],"Reproducciones": video["views"], 
+                if numero > 0:
+                    vid_t = {"Nombre del video": video["title"], "Nombre del canal": video["channel_title"],
+                        "Fecha Publicación": video["publish_time"],"Reproducciones": video["views"], 
                         "Likes": video["likes"], "Dislikes": video["dislikes"], "Tags": video["tags"]}
-        respuesta.append(vid_t)
+                    lista_videos.append(vid_t)
+                    numero-= 1
+                elif numero == 0:
+                    break 
 
-    return respuesta
+    return lista_videos
 
 
 
