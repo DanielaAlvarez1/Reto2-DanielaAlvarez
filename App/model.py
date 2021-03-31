@@ -46,12 +46,12 @@ def initCatalog():
 
     catalog["categorias"]=lt.newList(datastructure='ARRAY_LIST')
     catalog["videos_por_categoria"]= mp.newMap(37,
-                                            maptype='PROBING',
-                                            loadfactor=0.5,
+                                            maptype='CHAINING',
+                                            loadfactor=2.O,
                                             comparefunction=comparecategories)
     catalog["videos_por_pais"]= mp.newMap(13,
-                                            maptype='PROBING',
-                                            loadfactor=0.5,
+                                            maptype='CHAINING',
+                                            loadfactor=2.0,
                                             comparefunction=comparecountry)
 
     return catalog
