@@ -41,13 +41,18 @@ los mismos.
 # Construccion de modelos
 def initCatalog():
     catalog = {"categorias": None,
-                "videos_por_categoria": None}
+                "videos_por_categoria": None,
+                "videos_por_pais": None}
 
     catalog["categorias"]=lt.newList(datastructure='ARRAY_LIST')
     catalog["videos_por_categoria"]= mp.newMap(37,
-                                            maptype='CHAINING',
-                                            loadfactor=6.0,
+                                            maptype='PROBING',
+                                            loadfactor=0.5,
                                             comparefunction=comparecategories)
+    catalog["videos_por_pais"]= mp.newMap(13,
+                                            maptype='PROBING',
+                                            loadfactor=0.5,
+                                            comparefunction=comparecountry)
 
     return catalog
 
@@ -56,6 +61,10 @@ def addcategory(catalog, categoria):
     lt.addLast(catalog["categorias"], categoria)
 
 def addvideo(catalog, video):
+    addvideocat(catalog, video)
+    addvideocountry(catalog, video)
+
+def addvideocat(catalog, video):
     c = catalog['videos_por_categoria']
     categoria = nombrecategoria(catalog, video["category_id"])
     existecategoria = mp.contains(c, categoria)
@@ -63,14 +72,21 @@ def addvideo(catalog, video):
         entrada = mp.get(c, categoria)
         videos = me.getValue(entrada)
     else:
-        videos = newcategory(categoria)
+        videos = lt.newList(datastructure='ARRAY_LIST')
         mp.put(c, categoria, videos)
     lt.addLast(videos, video)
 
-# Funciones para creacion de datos
-def newcategory(categoria):
-    videos = lt.newList(datastructure='ARRAY_LIST')
-    return videos
+def addvideocountry(catalog, video):
+    p = catalog['videos_por_pais']
+    pais = video["country"].lower().replace(" ", "")
+    existepais = mp.contains(p, pais)
+    if existepais:
+        entrada = mp.get(p, pais)
+        videos = me.getValue(entrada)
+    else:
+        videos = lt.newList(datastructure='ARRAY_LIST')
+        mp.put(p, pais, videos)
+    lt.addLast(videos, video)
 
 # Funciones de consulta
 def nombrecategoria(catalog, idcategoria):
@@ -105,8 +121,23 @@ def comparelikes(video1, video2):
      else:
         return False 
 
+def compareviews(video1, video2):
+     if int(video1["views"]) > int(video2["views"]):
+        return True
+     else:
+        return False 
+
 def comparecategories(llave, categoria):
     entry = me.getKey(categoria)
+    if (llave == entry):
+        return 0
+    elif (llave > entry):
+        return 1
+    else:
+        return -1
+
+def comparecountry(llave, pais):
+    entry = me.getKey(pais)
     if (llave == entry):
         return 0
     elif (llave > entry):
@@ -120,100 +151,103 @@ def sortVideos(lista, comparacion):
     return sorted_list
 
 #funcion requerimiento 1
-def videos_categoria_pais(catalog, categoria, pais, numero):
-    videos = sortVideos(catalog["videos"], "None", 4, cmpviews)
-    categoria = categorias(catalog,categoria)
-    lista_videos = lt.newList(datastructure='ARRAY_LIST')
+def videos_categoria_pais(catalog, nombrecategoria, pais, numero):
+    nombrecategoria = nombrecategoria.replace(" ", "").lower()
+    categoria = mp.get(catalog['videos_por_categoria'], nombrecategoria)
+    videos = me.getValue(categoria)
+    videos_ordenados = sortVideos(videos, compareviews)
+    lista_videos = []
 
-    for i in range(1, lt.size(videos)):
-        video = lt.getElement(videos, i)
-        if video["category_id"] == categoria:
-            if video["country"].lower() == pais.lower():
-                if numero > 0:
-                    vid_t = {"Nombre del video": video["title"], "Trending date": video["trending_date"],
+    for i in range(1, lt.size(videos_ordenados)):
+        video = lt.getElement(videos_ordenados, i)
+        if video["country"].lower() == pais.lower():
+            if numero > 0:
+                vid_t = {"Nombre del video": video["title"], "Trending date": video["trending_date"],
                         "Nombre del canal": video["channel_title"], "Fecha Publicación": video["publish_time"],
                         "Reproducciones": video["views"], "Likes": video["likes"], "Dislikes": video["dislikes"]}
-                    lt.addLast(lista_videos, vid_t)
-                    numero-=1
-                elif numero == 0:
-                    break
+                lista_videos.append(vid_t)
+                numero-=1
+            elif numero == 0:
+                break
                     
     return lista_videos
 
 #funcion requerimiento 2
 def video_tendencia_pais(catalog, pais):
-    videos_pais = {}
+    pais = pais.replace(" ", "").lower()
+    videos_pais = mp.get(catalog['videos_por_pais'], pais)
+    videos = me.getValue(videos_pais)
+
+    videos_por_id = {}
     tendencia_videos = {}
-    for i in range(1, lt.size(catalog["videos"])):   
-        video = lt.getElement(catalog["videos"], i)
-        if video["country"].lower() == pais.lower():
-            if video["video_id"] in tendencia_videos:
-                tendencia_videos[video["video_id"]] = tendencia_videos[video["video_id"]] + 1
-            else:
-                tendencia_videos[video["video_id"]] = 1
-                videos_pais[video["video_id"]]= video
+    for i in range(1, lt.size(videos)):   
+        video = lt.getElement(videos, i)
+        if video["video_id"] in tendencia_videos:
+            tendencia_videos[video["video_id"]] = tendencia_videos[video["video_id"]] + 1
+        else:
+            tendencia_videos[video["video_id"]] = 1
+            videos_por_id[video["video_id"]]= video
 
     mas_dias = 0
     video = {}
     for i in tendencia_videos:
         if tendencia_videos[i] > mas_dias:
             mas_dias = tendencia_videos[i]
-            video = videos_pais[i]
+            video = videos_por_id[i]
 
     video["Dias Tendencia"] = mas_dias
     return video
 
 #funcion requerimiento 3
 def video_tendencia_categoria(catalog, categoria):
-    idcategoria = categorias(catalog, categoria)
-    categoria_veces={}
-    categoria_p1={}
-    mayor=0
-    respuesta =""
-    entregar = ""
+    categoria = categoria.replace(" ", "").lower()
+    videos_categoria = mp.get(catalog['videos_por_categoria'], categoria)
+    videos = me.getValue(videos_categoria)
 
-    for i in range(lt.size(catalog["videos"])):
-        objeto=lt.getElement(catalog["videos"],i)
-        if objeto["category_id"] == idcategoria:
-            if objeto["video_id"] in categoria_veces:
-                categoria_veces[objeto["video_id"]]=categoria_veces[objeto["video_id"]]+1
-            else:
-                categoria_veces[objeto["video_id"]]=1
-                categoria_p1[objeto["video_id"]]=objeto
+    videos_por_id = {}
+    tendencia_videos = {}
+    for i in range(1, lt.size(videos)):   
+        video = lt.getElement(videos, i)
+        if video["video_id"] in tendencia_videos:
+            tendencia_videos[video["video_id"]] = tendencia_videos[video["video_id"]] + 1
+        else:
+            tendencia_videos[video["video_id"]] = 1
+            videos_por_id[video["video_id"]]= video
 
-    for o in categoria_veces:
-        if categoria_veces[o] > mayor:
-            mayor=categoria_veces[o]
-            respuesta=(o,categoria_veces[o])
-    for h in categoria_p1:
-        if respuesta[0] == h:
-            entregar=categoria_p1[h]
-            break
+    mas_dias = 0
+    video = {}
+    for i in tendencia_videos:
+        if tendencia_videos[i] > mas_dias:
+            mas_dias = tendencia_videos[i]
+            video = videos_por_id[i]
 
-    return  (entregar["title"], entregar["channel_title"],entregar["category_id"], mayor)
+    video["Dias Tendencia"] = mas_dias
+    return video
 
 #funcion requerimiento 4
 def videos_likes(catalog, pais, tag, numero):
-    videos_pais = lt.newList(datastructure="ARRAY_LIST")
+    pais = pais.replace(" ", "").lower()
+    videos_pais = mp.get(catalog['videos_por_pais'], pais)
+    videos = me.getValue(videos_pais)
+    videos_tag = lt.newList(datastructure="ARRAY_LIST")
 
-    for i in range(1, lt.size(catalog["videos"])):
-        video = lt.getElement(catalog["videos"], i)
-        if video["country"].lower() == pais.lower():
-            lista_tag = video["tags"]
-            for e in range(len(lista_tag)):
-                if tag in lista_tag[e]:
-                    lt.addLast(videos_pais,video)
+    for i in range(1, lt.size(videos)):
+        video = lt.getElement(videos, i)
+        lista_tag = video["tags"]
+        for e in range(len(lista_tag)):
+            if tag in lista_tag[e]:
+                lt.addLast(videos_tag,video)
 
-    videos = sortVideos(videos_pais, "None", 4, comparelikes)
-    vids = lt.subList(videos, 1, numero)
-    respuesta = lt.newList()
+    videos = sortVideos(videos_tag, comparelikes)
+    vids = lt.subList(videos, 1, numero + 1)
+    respuesta = []
 
     for i in range(1, lt.size(vids)):
         video = lt.getElement(vids, i)
         vid_t = {"Nombre del video": video["title"], "Nombre del canal": video["channel_title"],
                 "Fecha Publicación": video["publish_time"],"Reproducciones": video["views"], 
                         "Likes": video["likes"], "Dislikes": video["dislikes"], "Tags": video["tags"]}
-        lt.addLast(respuesta, vid_t)
+        respuesta.append(vid_t)
 
     return respuesta
 
