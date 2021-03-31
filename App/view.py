@@ -56,9 +56,11 @@ while True:
     if int(inputs[0]) == 1:
         print("Cargando información en el catalogo ....")
         catalog = controller.initCatalog()
-        controller.cargarinfocatalogo(catalog)
+        answer = controller.cargarinfocatalogo(catalog)
         print("Se cargó la información al catalogo")
         print("Categorias cargadas: " + str(controller.sizecategorias(catalog)))
+        print("Tiempo [ms]: ", f"{answer[0]:.3f}", "  ||  ",
+              "Memoria [kB]: ", f"{answer[1]:.3f}")
 
     elif int(inputs[0]) == 2:
         categoria = input("Ingrese la categoria que desea consultar: ")
