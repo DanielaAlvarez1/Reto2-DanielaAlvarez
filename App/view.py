@@ -120,7 +120,6 @@ while True:
         tag = input("Ingrese el tag que desea consultar: ")
         numero = int(input("Ingrese el numero de videos que desea visualizar:"))
         videos = controller.videos_likes(catalog, pais, tag, numero)
-        print(videos)
         print("\nLos videos " + str(numero) + " con mas likes para " + pais + " con el tag " + tag + " son:")
         for i in range(0, len(videos)):
             video = videos[i]
