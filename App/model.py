@@ -47,7 +47,7 @@ def initCatalog():
     catalog["categorias"]=lt.newList(datastructure='ARRAY_LIST')
     catalog["videos_por_categoria"]= mp.newMap(37,
                                             maptype='CHAINING',
-                                            loadfactor=2.O,
+                                            loadfactor=2.0,
                                             comparefunction=comparecategories)
     catalog["videos_por_pais"]= mp.newMap(13,
                                             maptype='CHAINING',
@@ -177,49 +177,48 @@ def video_tendencia_pais(catalog, pais):
     pais = pais.replace(" ", "").lower()
     videos_pais = mp.get(catalog['videos_por_pais'], pais)
     videos = me.getValue(videos_pais)
-
-    videos_por_id = {}
-    tendencia_videos = {}
-    for i in range(1, lt.size(videos)):   
-        video = lt.getElement(videos, i)
-        if video["video_id"] in tendencia_videos:
-            tendencia_videos[video["video_id"]] = tendencia_videos[video["video_id"]] + 1
-        else:
-            tendencia_videos[video["video_id"]] = 1
-            videos_por_id[video["video_id"]]= video
-
-    mas_dias = 0
-    video = {}
-    for i in tendencia_videos:
-        if tendencia_videos[i] > mas_dias:
-            mas_dias = tendencia_videos[i]
-            video = videos_por_id[i]
-
-    video["Dias Tendencia"] = mas_dias
-    return video
+    sortVideos(videos, comparelikes)
+    return video_tendencia(videos)
 
 #funcion requerimiento 3
 def video_tendencia_categoria(catalog, categoria):
     categoria = categoria.replace(" ", "").lower()
     videos_categoria = mp.get(catalog['videos_por_categoria'], categoria)
     videos = me.getValue(videos_categoria)
+    sortVideos(videos, comparelikes)
+    return video_tendencia(videos)
 
-    videos_por_id = {}
-    tendencia_videos = {}
+#función para requerimiento 2 y 3
+def video_tendencia(videos):
+    videos_por_id = mp.newMap(lt.size(videos),
+                             maptype='CHAINING',
+                             loadfactor=2.0,
+                             comparefunction=comparecategories)
+    tendencia_videos = mp.newMap(lt.size(videos),
+                             maptype='CHAINING',
+                             loadfactor=2.0,
+                             comparefunction=comparecategories)
+
     for i in range(1, lt.size(videos)):   
         video = lt.getElement(videos, i)
-        if video["video_id"] in tendencia_videos:
-            tendencia_videos[video["video_id"]] = tendencia_videos[video["video_id"]] + 1
+        if mp.contains(tendencia_videos, video["video_id"]):
+            vid = mp.get(tendencia_videos, video["video_id"])
+            dias_tendencia = me.getValue(vid) + 1
         else:
-            tendencia_videos[video["video_id"]] = 1
-            videos_por_id[video["video_id"]]= video
+            dias_tendencia = 1
+            mp.put(videos_por_id, video["video_id"], video)
+        mp.put(tendencia_videos, video["video_id"], dias_tendencia)
 
     mas_dias = 0
     video = {}
-    for i in tendencia_videos:
-        if tendencia_videos[i] > mas_dias:
-            mas_dias = tendencia_videos[i]
-            video = videos_por_id[i]
+    keys = mp.keySet(tendencia_videos)
+    for i in lt.iterator(keys):
+        pareja_dias = mp.get(tendencia_videos, i)
+        num_dias = me.getValue(pareja_dias)
+        if num_dias > mas_dias:
+            mas_dias = num_dias
+            vid = mp.get(videos_por_id, i)
+            video = me.getValue(vid)
 
     video["Dias Tendencia"] = mas_dias
     return video

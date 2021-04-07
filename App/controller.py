@@ -58,7 +58,7 @@ def cargarinfocatalogo(catalog):
     return delta_time, delta_memory
 
 def cargardatos(catalog):
-    vfile = cf.data_dir + 'videos/videos-small.csv'
+    vfile = cf.data_dir + 'videos/videos-large.csv'
     input_file = csv.DictReader(open(vfile, encoding='utf-8'))
     for video in input_file:
         tags = video["tags"].split("|")
@@ -106,7 +106,7 @@ def videos_categoria_pais(catalog, categoria, pais, numero):
 
 #funcion requerimiento 2
 def video_trending(catalog,pais):
-    return model.video_tendencia_pais(catalog,pais)
+    return model.video_tendencia_pais2(catalog,pais)
 
 #funcion requerimiento 3
 def video_categoria(catalog,categoria):
