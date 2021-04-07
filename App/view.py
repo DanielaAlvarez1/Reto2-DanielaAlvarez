@@ -80,11 +80,12 @@ while True:
         numero = int(input("Ingrese el numero de videos que desea visualizar:"))
         videos = controller.videos_categoria_pais(catalog, categoria, pais, numero)
         print("\n Los " + str(numero) +  " videos con mas dias como tendendia en " + pais + " para la categoria " + categoria + " son:\n")
-        for i in range(0, len(videos)):
-            video = videos[i]
-            print("El " + str(i + 1) + " video que cumple con estas características es: " + str(video["Nombre del video"] + "."))
+        num = 1
+        for i in lt.iterator(videos):
+            print("El " + str(num) + " video que cumple con estas características es: " + str(i["Nombre del video"] + "."))
             print("A continuación encontrará información mas detallada de este.\n")
-            print(str(video)+"\n")
+            print(str(i)+"\n")
+            num+=1
         print("Se ejecutó el requerimiento 3")
         t2 = time.process_time()
         print("El tiempo de ejecución fue de " + str(t2-t1) + " segundos")
@@ -121,11 +122,12 @@ while True:
         numero = int(input("Ingrese el numero de videos que desea visualizar:"))
         videos = controller.videos_likes(catalog, pais, tag, numero)
         print("\nLos videos " + str(numero) + " con mas likes para " + pais + " con el tag " + tag + " son:")
-        for i in range(0, len(videos)):
-            video = videos[i]
-            print("El " + str(i + 1) + " video que cumple con estas características es: " + str(video["Nombre del video"] + "."))
+        num = 1
+        for i in lt.iterator(videos):
+            print("El " + str(num) + " video que cumple con estas características es: " + str(i["Nombre del video"] + "."))
             print("A continuación encontrará información mas detallada de este.\n")
-            print(str(video)+"\n")
+            print(str(i)+"\n")
+            num+=1
         print("Se ejecutó el requerimiento 4")
         t2 = time.process_time()
         print("El tiempo de ejecución fue de " + str(t2-t1) + " segundos")

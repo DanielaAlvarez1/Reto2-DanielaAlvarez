@@ -156,7 +156,7 @@ def videos_categoria_pais(catalog, nombrecategoria, pais, numero):
     categoria = mp.get(catalog['videos_por_categoria'], nombrecategoria)
     videos = me.getValue(categoria)
     videos_ordenados = sortVideos(videos, compareviews)
-    lista_videos = []
+    lista_videos = lt.newList(datastructure='ARRAY_LIST')
 
     for i in range(1, lt.size(videos_ordenados)):
         video = lt.getElement(videos_ordenados, i)
@@ -165,7 +165,7 @@ def videos_categoria_pais(catalog, nombrecategoria, pais, numero):
                 vid_t = {"Nombre del video": video["title"], "Trending date": video["trending_date"],
                         "Nombre del canal": video["channel_title"], "Fecha Publicación": video["publish_time"],
                         "Reproducciones": video["views"], "Likes": video["likes"], "Dislikes": video["dislikes"]}
-                lista_videos.append(vid_t)
+                lt.addLast(lista_videos, vid_t)
                 numero-=1
             elif numero == 0:
                 break
@@ -229,7 +229,7 @@ def videos_likes(catalog, pais, tag, numero):
     videos_pais = mp.get(catalog['videos_por_pais'], pais)
     videos = me.getValue(videos_pais)
     videos_ordenados = sortVideos(videos, comparelikes)
-    lista_videos = []
+    lista_videos = lt.newList(datastructure='ARRAY_LIST')
 
     for i in range(1, lt.size(videos)):
         video = lt.getElement(videos_ordenados, i)
@@ -238,7 +238,7 @@ def videos_likes(catalog, pais, tag, numero):
                 vid_t = {"Nombre del video": video["title"], "Nombre del canal": video["channel_title"],
                         "Fecha Publicación": video["publish_time"],"Reproducciones": video["views"], 
                         "Likes": video["likes"], "Dislikes": video["dislikes"], "Tags": video["tags"]}
-                lista_videos.append(vid_t)
+                lt.addLast(lista_videos, vid_t)
                 numero-= 1
             elif numero == 0:
                 break 
