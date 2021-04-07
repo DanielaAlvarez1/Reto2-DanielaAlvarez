@@ -233,17 +233,15 @@ def videos_likes(catalog, pais, tag, numero):
 
     for i in range(1, lt.size(videos)):
         video = lt.getElement(videos_ordenados, i)
-        lista_tag = video["tags"]
-        for e in range(len(lista_tag)):
-            if tag in lista_tag[e]:
-                if numero > 0:
-                    vid_t = {"Nombre del video": video["title"], "Nombre del canal": video["channel_title"],
+        if tag in video["tags"]:
+            if numero > 0:
+                vid_t = {"Nombre del video": video["title"], "Nombre del canal": video["channel_title"],
                         "Fecha Publicación": video["publish_time"],"Reproducciones": video["views"], 
                         "Likes": video["likes"], "Dislikes": video["dislikes"], "Tags": video["tags"]}
-                    lista_videos.append(vid_t)
-                    numero-= 1
-                elif numero == 0:
-                    break 
+                lista_videos.append(vid_t)
+                numero-= 1
+            elif numero == 0:
+                break 
 
     return lista_videos
 
